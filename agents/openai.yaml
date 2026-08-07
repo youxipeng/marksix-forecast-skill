@@ -1,0 +1,7 @@
+interface:
+  display_name: "六合彩 Pro 玄数融合预测"
+  short_description: "两次完整试用，数学回测与四玄学融合预测"
+  default_prompt: "Use $marksix-pro-forecast to verify the target Mark Six draw and request a full math + metaphysics + backtest forecast."
+policy:
+  allow_implicit_invocation: true
+
