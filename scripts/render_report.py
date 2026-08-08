@@ -28,7 +28,110 @@ def score_cell(v) -> str:
     return f'<td><div class="score"><span style="width:{val:.1f}%"></span><b>{val:.1f}</b></div></td>'
 
 
+def render_special(data: dict) -> str:
+    bt = data.get("backtest", {})
+    z_rows = data.get("top_zodiacs", [])
+    n_rows = data.get("top_special_numbers", [])
+    data_info = data.get("data", {})
+    warnings = data.get("warnings", [])
+    z_html = []
+    for row in z_rows:
+        nums = " ".join(f"{int(n):02d}" for n in row.get("numbers", []))
+        z_html.append(
+            "<tr>"
+            f'<td><b class="zodiac">{esc(row.get("zodiac", ""))}</b></td>'
+            f'<td>{esc(nums)}</td><td>{esc(row.get("element", ""))}</td>'
+            + score_cell(row.get("math"))
+            + score_cell(row.get("干支"))
+            + score_cell(row.get("河洛"))
+            + score_cell(row.get("梅花"))
+            + score_cell(row.get("奇门"))
+            + score_cell(row.get("base_hybrid"))
+            + score_cell(row.get("omen"))
+            + score_cell(row.get("hybrid"))
+            + "</tr>"
+        )
+    n_html = []
+    for row in n_rows:
+        n_html.append(
+            "<tr>"
+            f'<td><span class="ball">{int(row.get("number", 0)):02d}</span></td>'
+            f'<td>{esc(row.get("zodiac", ""))}</td><td>{esc(row.get("element", ""))}</td>'
+            + score_cell(row.get("math"))
+            + score_cell(row.get("干支"))
+            + score_cell(row.get("河洛"))
+            + score_cell(row.get("梅花"))
+            + score_cell(row.get("奇门"))
+            + score_cell(row.get("base_hybrid"))
+            + score_cell(row.get("omen"))
+            + score_cell(row.get("hybrid"))
+            + "</tr>"
+        )
+    bt_html = []
+    if bt.get("status") == "ok":
+        for key, label in (("math", "MES-v2数学"), ("metaphysics", "玄学"), ("hybrid", "融合")):
+            m = bt.get(key, {})
+            z = m.get("zodiac", {})
+            n = m.get("number", {})
+            mc = m.get("monte_carlo", {}).get("number_top5", {})
+            bt_html.append(
+                f"<tr><td>{label}</td><td>{fmt(z.get('top1_rate'),3)}</td>"
+                f"<td>{fmt(z.get('random_top1_rate'),3)}</td><td>{fmt(z.get('top3_rate'),3)}</td>"
+                f"<td>{fmt(n.get('top5_rate'),3)}</td><td>{fmt(n.get('top10_rate'),3)}</td>"
+                f"<td>{fmt(mc.get('p_ge_observed'),4)}</td></tr>"
+            )
+    warning_html = "".join(f"<li>{esc(x)}</li>" for x in warnings)
+    context = data.get("metaphysics_context", {})
+    mes = context.get("数学MES", {})
+    arena = mes.get("arena", {})
+    arena_weights = mes.get("arena_weights", {})
+    arena_bt = bt.get("arena_components", {})
+    arena_rows = []
+    labels = {"mes_v1": "旧MES-v1整体", "bayes": "Dirichlet贝叶斯", "ewma": "多尺度EWMA", "transition": "Markov转移", "hmm": "两状态HMM"}
+    for key in ("mes_v1", "bayes", "ewma", "transition", "hmm"):
+        outer = arena_bt.get(key, {}).get("number", {})
+        mc = arena_bt.get(key, {}).get("monte_carlo", {}).get("number_top5", {})
+        arena_rows.append(
+            f"<tr><td>{esc(labels[key])}</td><td>{esc(arena.get('component_status',{}).get(key,'—'))}</td>"
+            f"<td>{fmt(arena_weights.get(key),3)}</td><td>{fmt(arena.get('component_log_loss',{}).get(key),3)}</td>"
+            f"<td>{fmt(arena.get('component_top5_rate',{}).get(key),3)}</td><td>{fmt(outer.get('top5_rate'),3)}</td>"
+            f"<td>{fmt(outer.get('top10_rate'),3)}</td><td>{fmt(mc.get('p_ge_observed'),4)}</td></tr>"
+        )
+    arena_html = "".join(arena_rows)
+    diagnostic_html = "".join(
+        f'<article class="diag"><h3>{esc(key)}</h3><pre>{esc(json.dumps(context[key], ensure_ascii=False, indent=2))}</pre></article>'
+        for key in ("数学MES", "外应") if key in context
+    )
+    return f'''<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>六合彩 · 潮汕特码生肖研究</title>
+<style>
+:root{{--ink:#201b17;--muted:#746b61;--paper:#f5f0e5;--panel:#fffaf0;--line:#d8ccb9;--red:#9f2e24;--gold:#b88936}}
+*{{box-sizing:border-box}}body{{margin:0;background:var(--paper);color:var(--ink);font-family:"Noto Serif SC","Songti SC","SimSun",serif}}
+main{{max-width:1180px;margin:auto;padding:32px 20px 56px}}header{{border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px}}
+.eyebrow{{color:var(--red);font-weight:700;letter-spacing:.16em}}h1{{font-size:clamp(30px,5vw,54px);margin:9px 0}}h2{{font-size:22px}}
+.sub,.muted{{color:var(--muted)}}.panel{{background:var(--panel);border:1px solid var(--line);padding:18px;margin:14px 0 24px;overflow:auto}}
+table{{width:100%;border-collapse:collapse;min-width:780px}}th,td{{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}}th{{font-size:12px;color:var(--muted)}}
+.score{{position:relative;height:25px;min-width:76px;background:#eadfce}}.score span{{display:block;height:100%;background:linear-gradient(90deg,var(--gold),var(--red));opacity:.72}}.score b{{position:absolute;right:5px;top:4px;font:600 12px system-ui}}
+.ball{{display:inline-grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--red);color:white;font:700 13px system-ui}}.zodiac{{font-size:20px;color:var(--red)}}
+.notice{{border-left:4px solid var(--red);padding:11px 14px;background:#eee2d2}}.diag{{border-top:1px solid var(--line);padding:10px 0}}pre{{white-space:pre-wrap;font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--muted)}}footer{{margin-top:24px;color:var(--muted);font-size:13px}}
+</style></head><body><main>
+<header><div class="eyebrow">潮汕买码 · 特码 / 生肖研究</div><h1>特别号 × 十二生肖 × 玄数融合</h1>
+<p class="sub">目标：{esc(data.get("target",""))} · 农历年生肖：{esc(data.get("target_lunar_zodiac",""))} · 历史 {esc(data_info.get("draws_used",0))} 期 · 截至 {esc(data_info.get("through",""))}</p></header>
+<section class="panel"><h2>先看走步回测 · {esc(bt.get('range',{}).get('steps','—'))}期</h2><table><thead><tr><th>模型</th><th>生肖Top1</th><th>随机Top1基线</th><th>生肖Top3</th><th>特码Top5</th><th>特码Top10</th><th>Top5 MC p值</th></tr></thead><tbody>{''.join(bt_html)}</tbody></table><p class="muted">MC p值 = 在公平随机开奖假设下，随机模拟至少达到当前命中数的比例；越小才越值得继续研究，不能把一次低值直接当作可预测证据。</p></section>
+<section class="panel"><h2>MES-v2 模型竞技场</h2><table><thead><tr><th>候选数学模型</th><th>当前状态</th><th>当前权重</th><th>内层LogLoss</th><th>内层Top5</th><th>外层Top5</th><th>外层Top10</th><th>Top5 MC p值</th></tr></thead><tbody>{arena_html}</tbody></table><p class="muted">竞技场只用目标期之前的内层走步数据调权；同时落后均匀随机的候选可被归零。</p></section>
+<section class="panel"><h2>候选生肖</h2><table><thead><tr><th>生肖</th><th>本年号码</th><th>五行</th><th>MES数学</th><th>干支</th><th>河洛</th><th>梅花</th><th>奇门</th><th>外应前融合</th><th>外应</th><th>最终融合</th></tr></thead><tbody>{''.join(z_html)}</tbody></table></section>
+<section class="panel"><h2>候选特码号码</h2><table><thead><tr><th>号码</th><th>生肖</th><th>河图五行</th><th>MES数学</th><th>干支</th><th>河洛</th><th>梅花</th><th>奇门</th><th>外应前融合</th><th>外应</th><th>最终融合</th></tr></thead><tbody>{''.join(n_html)}</tbody></table></section>
+{f'<section class="panel"><h2>数学 / 外应 Pro 诊断</h2>{diagnostic_html}</section>' if diagnostic_html else ''}
+{f'<section class="panel"><h2>提示</h2><ul>{warning_html}</ul></section>' if warning_html else ''}
+<p class="notice">{esc(data.get("interpretation",""))}</p>
+<footer>民俗与算法研究用途。生肖、热冷与玄学评分不改变公平开奖的随机概率；不提供追损、借贷或加码建议。</footer>
+</main></body></html>'''
+
+
 def render(data: dict) -> str:
+    if data.get("mode") == "chaoshan-special":
+        return render_special(data)
     prob = data.get("probability", {})
     bt = data.get("backtest", {})
     weights = data.get("weights", {})
@@ -121,8 +224,7 @@ def main() -> None:
     ap.add_argument("--input", required=True)
     ap.add_argument("--output", required=True)
     args = ap.parse_args()
-    raw = json.loads(Path(args.input).read_text(encoding="utf-8"))
-    data = raw.get("forecast", raw)
+    data = json.loads(Path(args.input).read_text(encoding="utf-8"))
     Path(args.output).write_text(render(data), encoding="utf-8")
     print(args.output)
 

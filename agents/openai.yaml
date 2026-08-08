@@ -1,6 +1,13 @@
 interface:
-  display_name: "六合彩玄数融合预测"
-  short_description: "免费开源：六合彩数学回测、四玄学融合预测与可视化"
-  default_prompt: "使用 $marksix-hybrid-forecast 核对下一期六合彩开奖信息，并在本地运行数学、四玄学与无泄漏回测后生成实验性候选组合和可视化报告。"
+  display_name: "潮汕六合彩特码生肖研究"
+  short_description: "MES-v2模型竞技、玄学外应Pro与严格前向验证"
+  default_prompt: "Use $marksix-hybrid-forecast to analyze a Chaoshan-style Mark Six Extra Number forecast with MES-v2 model-arena math, optional 外应Pro, Monte Carlo auditing, and prospective validation."
+  icon_small: "./assets/icon.svg"
+  icon_large: "./assets/icon.svg"
 policy:
+  products:
+    - "chatgpt"
+    - "codex"
+    - "api"
+    - "atlas"
   allow_implicit_invocation: true

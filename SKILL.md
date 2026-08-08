@@ -1,99 +1,126 @@
 ---
 name: marksix-hybrid-forecast
-description: "Analyze Hong Kong Mark Six (六合彩) with exact lottery probabilities, historical-data diagnostics, walk-forward backtests, experimental mathematical scoring, and traditional Chinese metaphysics features (天干地支、河图洛书、梅花易数、奇门遁甲), then generate candidate lines and a visual report. Use when the user asks for Mark Six rules, historical analysis, number selection, experimental predictions/预测, hot/cold numbers, backtests,玄学选号,混合算法, or可视化分析."
+description: "Analyze Hong Kong Mark Six (六合彩) in two auditable modes: Chaoshan/潮汕民间买码 research centered on the Extra Number (特码/特别号), dynamic lunar-year zodiac mapping, MES-v2 model arena (legacy MES, Bayesian, EWMA, Markov, HMM), Monte Carlo significance checks, 天干地支/五行 + 河图洛书 + 梅花易数 + 奇门遁甲 fusion, optional pre-forecast 外应Pro inputs, immutable prospective experiment logging, and chronological backtests; or official 6-of-49 main-number research. Use for 潮汕六合彩、买码、特码、特别号、生肖、号码预测、玄学选号、外应、左手边/右手边物品、天气/声音/现场观察、冷热号、历史回测、前向验证、Mark Six rules, or visual forecast reports."
 ---
 
 # Mark Six hybrid forecast
 
-Treat this as an auditable lottery-research workflow, not a method that can guarantee or reliably create an edge in a fair random draw.
+Treat all forecasts as lottery-research experiments. Never imply that historical or metaphysics features can guarantee an edge in a fair random draw.
+
+## Route the request
+
+- If the user says 潮汕、买码、特码、特别号、生肖, use **Chaoshan special mode** by default. Read references/chaoshan-special.md.
+- If the user explicitly asks for official ticket/main-number analysis, use **official main-number mode**.
+- If ambiguous after a conversation about 潮汕买码, preserve Chaoshan special mode.
 
 ## Mandatory workflow
 
-1. Verify the target draw and current rules from official HKJC sources before any live forecast. Read `references/marksix-rules.md`. If a rule, ticket price, prize, draw time, or schedule may have changed, browse HKJC again.
-2. Acquire historical results. Prefer official HKJC results. Never invent or interpolate missing draws. Normalize to `draw_id,date,n1,n2,n3,n4,n5,n6,extra` and validate six distinct main numbers in 1–49 plus a distinct extra number.
-3. Establish the mathematical baseline first. Every six-number line has first-prize probability `1 / C(49,6) = 1 / 13,983,816` under a fair draw. Historical frequency does not change that fact.
-4. Run the mathematical model and the four metaphysics feature families separately. Read `references/model.md` and `references/metaphysics.md` before interpreting the scores.
-5. Backtest chronologically with no future leakage. Compare math-only, metaphysics-only, hybrid, and uniform-random baselines. If there is no stable out-of-sample lift, say so plainly.
-6. Generate a small diversified candidate portfolio only after the audit. Label candidates as experimental selections, not winning predictions.
-7. Produce the visual report by default when the user asks for a forecast or a comparison. Use `scripts/render_report.py` on the JSON from `scripts/marksix_engine.py`.
+1. Verify the target draw and current official HKJC rules/schedule before a live forecast. Read references/marksix-rules.md.
+2. Acquire real historical results. Prefer HKJC; if a secondary archive is required, cross-check recent draws against HKJC and disclose the source. Normalize to draw_id,date,n1,n2,n3,n4,n5,n6,extra.
+3. Never invent missing draws. Validate six distinct main numbers plus one distinct Extra Number in 1–49.
+4. Read references/model.md and references/metaphysics.md before interpreting scores.
+   If the user wants 外应/现场输入, also read references/external-omen.md and freeze the observation before showing omen-adjusted rankings.
+5. Keep math, metaphysics, and hybrid results separate. Do not hide a weak component by averaging it into the hybrid.
+6. Backtest chronologically: at draw t, use only draws before t. Use at least 100 prior draws for a scored evaluation unless the user explicitly accepts an exploratory smaller sample. Keep MES-v2 arena candidates individually visible.
+7. Compare every hit rate with the exact random baseline and the Monte Carlo one-sided null tail in the backtest. If lift is absent, unstable, or has a large null-tail probability, say so plainly.
+8. Produce the appropriate visual report with scripts/render_report.py when the user asks for a forecast or comparison.
+9. For genuine future validation, freeze each pre-draw forecast with `special-freeze`, settle it only after verifying the official result, then inspect `special-ledger`. Never overwrite a frozen forecast or settlement.
 
-## Data and execution
+## Chaoshan special mode
 
-All scoring runs locally. No private API, account, trial counter, subscription, or server is required.
+Treat HKJC's Extra Number as the object colloquially called 特码 in Chaoshan/外围 usage. Do not use horse-racing results.
 
-For CSV analysis:
+The zodiac-number table is a folk convention, not an HKJC lottery rule. Compute it dynamically:
 
-```bash
+- switch the year animal at Lunar New Year, not January 1;
+- number 1 maps to that lunar-year animal;
+- as numbers increase, walk backward through 鼠牛虎兔龙蛇马羊猴鸡狗猪;
+- the year animal therefore owns five numbers (1, 13, 25, 37, 49); each other animal owns four.
+
+Require lunar_python for correct Lunar-New-Year boundaries. If unavailable, install version 1.4.8 when permitted. Otherwise stop zodiac scoring rather than silently using a wrong Gregorian-year table.
+
+Run:
+
+~~~bash
+python3 scripts/marksix_engine.py special-analyze \
+  --csv /path/to/draws.csv \
+  --target "2026-08-08 21:30" \
+  --output /tmp/marksix-special.json
+
+# Optional one-shot 外应 input (inline JSON or JSON file path)
+python3 scripts/marksix_engine.py special-analyze \
+  --csv /path/to/draws.csv \
+  --target "2026-08-08 21:30" \
+  --omen-json '{"左物":"植物","左色":"绿","方位":"东","数字":3}' \
+  --output /tmp/marksix-special-omen.json
+
+python3 scripts/marksix_engine.py special-backtest \
+  --csv /path/to/draws.csv \
+  --min-train 100 \
+  --output /tmp/marksix-special-backtest.json
+
+# Optional: immutable prospective experiment database
+python3 scripts/marksix_engine.py special-freeze \
+  --csv /path/to/draws.csv --target "2026-08-08 21:30" \
+  --omen-json '{"左物":"裤头绳","左色":"黄色"}' \
+  --db /path/to/marksix-forward.sqlite
+
+python3 scripts/marksix_engine.py special-settle \
+  --db /path/to/marksix-forward.sqlite --target "2026-08-08 21:30" \
+  --actual-extra 3  # example only: replace with the verified official Extra Number
+
+python3 scripts/marksix_engine.py special-ledger \
+  --db /path/to/marksix-forward.sqlite
+
+python3 scripts/render_report.py \
+  --input /tmp/marksix-special.json \
+  --output /tmp/marksix-special.html
+~~~
+
+For Chaoshan mode, report:
+
+1. target draw, data cutoff, sample size, and current lunar-year zodiac table;
+2. strict walk-forward scorecard for 生肖 Top1/Top3 and 特码号码 Top1/Top5/Top10;
+3. exact random baselines: a fixed k-number set hits the Extra Number with probability k/49; zodiac baselines use the actual 4- or 5-number zodiac coverage;
+4. separate MES-v2 arena candidates / math / 干支 / 河洛 / 梅花 / 奇门 / hybrid scores, plus Monte Carlo null-tail results;
+   if 外应 is supplied, also show the pre-omen hybrid and the omen-adjusted hybrid; never pretend historical backtests contain unrecorded omen data;
+5. top candidate zodiacs first, then candidate Extra Numbers within the current zodiac mapping;
+6. an explicit statement when the model fails to beat random out of sample.
+
+## Official main-number mode
+
+Run:
+
+~~~bash
 python3 scripts/marksix_engine.py analyze \
   --csv /path/to/draws.csv \
   --target "2026-08-08 21:30" \
   --tickets 8 \
   --output /tmp/marksix-report.json
 
-python3 scripts/render_report.py \
-  --input /tmp/marksix-report.json \
-  --output /tmp/marksix-report.html
-```
-
-For chronological validation:
-
-```bash
 python3 scripts/marksix_engine.py backtest \
   --csv /path/to/draws.csv \
   --min-train 100 \
   --output /tmp/marksix-backtest.json
-```
+~~~
 
-The metaphysics time features use `lunar_python` when available. If missing, install the MIT-licensed package only when package installation is permitted:
+Every exact six-number main line has first-prize probability 1 / C(49,6) = 1 / 13,983,816 under a fair draw.
 
-```bash
-python3 -m pip install lunar_python==1.4.8
-```
+## Model separation
 
-If installation is unavailable, continue with the mathematical engine and date-based 河图洛书 features, mark precise lunar/干支/梅花/奇门 time features as unavailable, and do not fabricate them.
-
-## Required model separation
-
-Always keep these three views visible:
-
-- `math`: frequency shrinkage + EWMA + recency diagnostics. Treat all historical signals as hypotheses that must beat the random baseline out of sample.
-- `metaphysics`: four independent sub-scores—干支五行、河图洛书、梅花易数、奇门遁甲. These are traditional/cultural heuristics without established predictive validity.
-- `hybrid`: fixed blend of math and metaphysics scores. Do not optimize weights on the same period used to report performance.
-
-Do not hide a weak component by averaging it into the hybrid. Report component backtests separately.
-
-## Candidate construction
-
-Generate multiple lines with weighted sampling without replacement from 1–49, then diversify the portfolio. Prefer low overlap between lines. Typical-shape constraints (odd/even balance, sum range, spacing) may be used only for portfolio variety; explicitly state that they do not improve the probability of any exact six-number combination.
-
-When discussing prize-sharing expected value, distinguish it from draw probability. Avoiding popular human-picked patterns can reduce collision risk if a jackpot is hit, but it does not make the numbers more likely to be drawn.
-
-## Backtest discipline
-
-- Sort by draw date and predict each draw using only prior draws.
-- Use at least 100 prior draws for a scored prediction unless the user explicitly accepts a smaller exploratory sample.
-- Report mean matched main numbers per line, rate of 3+ matches, and comparison with the hypergeometric/random baseline.
-- Treat one lucky high-hit draw as noise unless performance persists across multiple non-overlapping windows.
-- Never select a model because it looked best on the final holdout and then report that same holdout as unbiased evidence.
-
-## Live answer format
-
-For a forecast, present in this order:
-
-1. Target draw, data cutoff, number of historical draws, and whether official data was verified.
-2. Backtest scorecard: random baseline vs math vs metaphysics vs hybrid.
-3. Top-number table with separate `math / 干支 / 河洛 / 梅花 / 奇门 / hybrid` scores.
-4. Candidate portfolio, with one line explicitly identified as math-led, one metaphysics-led, and the remaining lines hybrid/diversified.
-5. Short rationale for each metaphysics engine in the target time chart.
-6. Visual report.
-7. One-line probability warning: no candidate has higher first-prize probability unless evidence of a real physical draw bias survives rigorous testing.
+- math: in official mode, main-number frequency/EWMA/recency; in Chaoshan mode use MES-v2. Put legacy MES-v1, Dirichlet-Bayesian shrinkage, multi-scale EWMA, strongly smoothed residue-state transition, and a two-state/seven-residue HMM into a nested prequential model arena. Eliminate or downweight candidates that fail the uniform null checks using past data only, then blend the surviving math signal with dynamic Extra-zodiac history.
+- metaphysics: 干支五行、河洛、梅花、奇门 kept auditable as separate cultural heuristics. Chaoshan mode additionally projects them onto the current zodiac table and uses生肖五行/日时支 relations.
+- hybrid: fixed 55% math + 45% metaphysics blend. Never tune these weights on the same final holdout used to claim performance.
+- optional 外应Pro: keep it separate and cap it at 10% of the final ranking (`90% base hybrid + 10% omen`). Accept only deterministic encodings documented in references/external-omen.md; leave unknown observations unscored. It is prospective, not retrospectively backtestable unless observations were genuinely recorded before each draw.
 
 ## Safety and honesty
 
-Do not give loss-chasing, borrowing, martingale, or stake-escalation advice. Do not claim guaranteed hits, “必中”, “稳中”, hidden certainty, or a proven edge from astrology/玄学. If the user is under 18 or asks to facilitate illegal betting, do not assist with wagering. Analysis, probability education, and cultural exploration are allowed.
+Do not provide loss-chasing, borrowing, martingale, stake escalation, underground-bookmaker instructions, or claims such as 必中/稳中. Mainland underground Mark Six is illegal private gambling; keep Chaoshan mode to historical analysis, probability education, cultural research, and experimental forecasting rather than facilitating illegal wagering.
 
 ## References
 
-- `references/marksix-rules.md`: current rules, prize tiers, official sources, exact probability model.
-- `references/model.md`: statistical features, hybrid scoring, backtest metrics, portfolio construction.
-- `references/metaphysics.md`: four metaphysics engines, GitHub research lineage, translation from traditional charts to 1–49 features, and license notes.
+- references/marksix-rules.md: official game mechanics and exact probability baseline.
+- references/chaoshan-special.md: 特码/生肖 mapping convention and Chaoshan-mode evaluation.
+- references/model.md: MES-v2 arena/HMM, Monte Carlo validation, prospective ledger, and walk-forward discipline.
+- references/metaphysics.md: four metaphysics engines and zodiac projection.
+- references/external-omen.md: 外应Pro one-shot protocol and deterministic encoding.

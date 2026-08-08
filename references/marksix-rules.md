@@ -44,3 +44,11 @@ Use this hypergeometric distribution as the baseline for backtest hit-rate compa
 ## Important distinction
 
 Historical hot/cold behavior, auspicious numbers, date patterns, and chart features do not alter these exact probabilities unless there is a genuine non-random physical bias in the draw mechanism. Any claimed edge must therefore survive a strict out-of-sample test and a randomness audit.
+
+## Extra Number vs 潮汕“特码”
+
+HKJC's draw mechanically produces one Extra Number after the six Drawn Numbers. In Chaoshan/underground folk terminology this Extra Number is commonly the settlement object called 特码. That colloquial usage does not create a separate HKJC bet type.
+
+Under the fair-draw model, each individual number has probability 1/49 of being the Extra Number. A predeclared set of k distinct Extra-Number candidates therefore covers k/49 of the possible Extra Numbers.
+
+生肖 mapping used by folk Mark Six analysis is not an official HKJC rule. See references/chaoshan-special.md for the dynamic lunar-year convention and its backtest baseline.

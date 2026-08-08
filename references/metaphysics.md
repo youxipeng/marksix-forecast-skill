@@ -79,3 +79,15 @@ This is **not** presented as a full classical奇门断局. Full rotating Heaven/
 Normalize each available metaphysics engine to 0–100, then average them equally. If `lunar_python` is unavailable, do not synthesize lunar/干支/梅花/奇门 results; report the missing engines and use only available features.
 
 The final answer must show component scores so the user can later test whether any metaphysics engine adds out-of-sample value or only noise.
+
+## Chaoshan zodiac projection
+
+When the target is the Extra Number / 特码:
+
+1. compute the four number-level components normally for the target draw time;
+2. build the current lunar-year zodiac table from references/chaoshan-special.md;
+3. project each component to a zodiac by taking the **mean** score of that zodiac's numbers, never the sum;
+4. for 干支 only, blend the projected number score with a direct生肖 layer based on the candidate animal's five element plus same/六合/三合/冲 relations to the target day/hour branches;
+5. normalize each zodiac component independently before forming the equal-weight metaphysics zodiac ensemble.
+
+This direct生肖 relation layer is a project convention. Treat it as an explicit, testable cultural heuristic rather than a rule claimed by a classical source.
